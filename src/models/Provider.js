@@ -23,10 +23,8 @@ const providerSchema = new mongoose.Schema(
         lat: { type: Number },
         lng: { type: Number }
     },
-    phone:{
-        type: String,
-        required: true, 
-    },
+    // Optional: only stored when the provider has published it.
+    phone: { type: String, default: "" },
   },
   {
     timestamps: true,

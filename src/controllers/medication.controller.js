@@ -87,20 +87,16 @@ export async function getMedications(req, res, next) {
 
 export async function getMedication(req, res, next) {
   try {
-    const medication = await Medication.findById(req.params.id);
+    const medication = await Medication.findById(req.params.id).lean();
     if (!medication) {
       return res.status(404).json({ success: false, data: null, message: 'Medication not found' });
     }
 
-    const prices = await Price.find({
-        itemType: "medication",
-        itemId: req.params.id
-      })
-      .populate("providerId", PROVIDER_FIELDS);
+    const [data] = await attachPrices("medication", [medication]);
 
     res.status(200).json({
       success: true,
-      data: { ...medication._doc, prices },
+      data,
       message: "Medications retrieved successfully"
     });
   } catch (error) {

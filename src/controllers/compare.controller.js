@@ -1,7 +1,6 @@
 import Medication from '../models/Medication.js';
 import Service from '../models/Service.js';
-import Price from '../models/Price.js';
-import { PROVIDER_FIELDS, validObjectIds } from '../utils/prices.js';
+import { attachPrices, validObjectIds } from '../utils/prices.js';
 
 const MODELS_BY_ITEM_TYPE = {
   medication: Medication,
@@ -48,24 +47,8 @@ export async function comparePrices(req, res, next) {
       });
     }
 
-    const items = await Model.find({ _id: { $in: itemIds } });
-
-    const prices = await Price.find({
-      itemType,
-      itemId: { $in: itemIds },
-    }).populate('providerId', PROVIDER_FIELDS);
-
-    const pricesByItemId = new Map();
-    for (const price of prices) {
-      const key = String(price.itemId);
-      if (!pricesByItemId.has(key)) pricesByItemId.set(key, []);
-      pricesByItemId.get(key).push(price);
-    }
-
-    const data = items.map((item) => ({
-      ...item.toObject(),
-      prices: pricesByItemId.get(String(item._id)) || [],
-    }));
+    const items = await Model.find({ _id: { $in: itemIds } }).lean();
+    const data = await attachPrices(itemType, items);
 
     res.status(200).json({
       success: true,

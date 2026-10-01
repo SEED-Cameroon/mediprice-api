@@ -76,19 +76,15 @@ export async function getServices(req, res, next) {
 
 export async function getService(req, res, next) {
   try {
-    const service = await Service.findById(req.params.id);
+    const service = await Service.findById(req.params.id).lean();
     if (!service) {
       return res.status(404).json({ success: false, data: null, message: 'Service not found' });
     }
-    const prices = await Price.find({
-            itemType: "service",
-            itemId: req.params.id
-          })
-          .populate("providerId", PROVIDER_FIELDS);
+    const [data] = await attachPrices("service", [service]);
 
     res.status(200).json({
       success: true,
-      data: { ...service._doc, prices },
+      data,
       message: "Services retrieved successfully"
     });
   } catch (error) {

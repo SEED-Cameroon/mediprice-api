@@ -12,7 +12,8 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed": "node scripts/seed.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "seed:real": "node scripts/seed-real.js"
   },
   "keywords": [],
   "author": "",

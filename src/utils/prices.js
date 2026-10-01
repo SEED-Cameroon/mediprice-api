@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Price from '../models/Price.js';
+import ReferencePrice from '../models/ReferencePrice.js';
 
 /**
  * Provider fields included with every price row, so the frontend can show
@@ -28,20 +29,30 @@ export function validObjectIds(ids) {
  */
 export async function attachPrices(itemType, items) {
   if (items.length === 0) return [];
+  const itemIds = items.map((item) => item._id);
 
-  const prices = await Price.find({
-    itemType,
-    itemId: { $in: items.map((item) => item._id) },
-  })
-    .populate('providerId', PROVIDER_FIELDS)
-    .lean();
+  const [prices, references] = await Promise.all([
+    Price.find({ itemType, itemId: { $in: itemIds } })
+      .populate('providerId', PROVIDER_FIELDS)
+      .lean(),
+    ReferencePrice.find({ itemType, itemId: { $in: itemIds } }).sort({ year: -1 }).lean(),
+  ]);
 
-  const byItemId = new Map();
-  for (const price of prices) {
-    const key = String(price.itemId);
-    if (!byItemId.has(key)) byItemId.set(key, []);
-    byItemId.get(key).push(price);
-  }
+  const group = (rows) => {
+    const byItemId = new Map();
+    for (const row of rows) {
+      const key = String(row.itemId);
+      if (!byItemId.has(key)) byItemId.set(key, []);
+      byItemId.get(key).push(row);
+    }
+    return byItemId;
+  };
+  const pricesByItem = group(prices);
+  const referencesByItem = group(references);
 
-  return items.map((item) => ({ ...item, prices: byItemId.get(String(item._id)) ?? [] }));
+  return items.map((item) => ({
+    ...item,
+    prices: pricesByItem.get(String(item._id)) ?? [],
+    referencePrices: referencesByItem.get(String(item._id)) ?? [],
+  }));
 }
