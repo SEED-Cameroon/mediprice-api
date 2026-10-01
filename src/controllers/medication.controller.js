@@ -1,6 +1,7 @@
 import Medication from "../models/Medication.js"; 
 import Price from "../models/Price.js";
 import PriceHistory from "../models/PriceHistory.js";
+import { PROVIDER_FIELDS, attachPrices } from "../utils/prices.js";
 
 const LIMIT = 10;
 const PAGE = 1;
@@ -8,7 +9,7 @@ const SORT = "name";
 
 export async function createMedication(req, res, next) {
   try {
-    const { name, genericName, category, description } = req.body;
+    const { name, genericName, category, description, form, requiresPrescription } = req.body;
 
     // Validate required fields
     if (!name || !genericName || !category || !description) {
@@ -19,7 +20,9 @@ export async function createMedication(req, res, next) {
       name,
       genericName,
       category,
-      description
+      description,
+      form,
+      requiresPrescription,
     });
 
     res.status(201).json({
@@ -52,16 +55,21 @@ export async function getMedications(req, res, next) {
     const pageNum = Math.max(1, parseInt(page, 10) || PAGE);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || LIMIT));
 
-    const [medication, total] = await Promise.all([
+    const [medications, total] = await Promise.all([
       Medication.find(filters)
+        .sort(SORT)
         .skip((pageNum - 1) * limitNum)
-        .limit(limitNum),
+        .limit(limitNum)
+        .lean(),
       Medication.countDocuments(filters),
     ]);
 
+    // Include prices so list pages can show the lowest price without a request per item.
+    const data = await attachPrices("medication", medications);
+
     res.status(200).json({
       success: true,
-      data: medication,
+      data,
       message: "Medications retrieved successfully",
       pagination: {
         page: pageNum,
@@ -88,7 +96,7 @@ export async function getMedication(req, res, next) {
         itemType: "medication",
         itemId: req.params.id
       })
-      .populate("providerId", "name type");
+      .populate("providerId", PROVIDER_FIELDS);
 
     res.status(200).json({
       success: true,

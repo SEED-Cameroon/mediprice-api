@@ -18,7 +18,10 @@ import authRoutes from './src/routes/auth.routes.js';
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
+// CORS_ORIGIN may list several origins, comma-separated
+// (e.g. the Vite dev server and a preview build).
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean);
+app.use(cors({ origin: allowedOrigins?.length ? allowedOrigins : undefined }));
 app.use(express.json());
 
 app.use(

@@ -6,6 +6,10 @@ const medicationSchema = new mongoose.Schema(
     genericName: { type: String, trim: true, },
     category: { type: String, required: true },
     description: { type: String, required: true, },
+    // What one price covers, e.g. "Tablets, pack of 10". Prices are only
+    // comparable for the same form and quantity.
+    form: { type: String, trim: true },
+    requiresPrescription: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

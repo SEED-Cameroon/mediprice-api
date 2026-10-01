@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 import Provider from '../models/Provider.js';
 import Price from '../models/Price.js';
+import Medication from '../models/Medication.js';
+import Service from '../models/Service.js';
 
 export async function createProvider(req, res, next) {
   try {
@@ -59,10 +61,21 @@ export async function getProvider(req, res, next) {
     if (!provider) {
       return res.status(404).json({ success: false, data: null, message: 'Provider not found' });
     }
-    const price = await Price.find({ providerId: req.params.id });
+    const rows = await Price.find({ providerId: req.params.id }).lean();
+
+    // Attach the medication or service each price is for, one query per type.
+    const idsFor = (type) => rows.filter((row) => row.itemType === type).map((row) => row.itemId);
+    const [medications, services] = await Promise.all([
+      Medication.find({ _id: { $in: idsFor('medication') } }).lean(),
+      Service.find({ _id: { $in: idsFor('service') } }).lean(),
+    ]);
+    const items = new Map([...medications, ...services].map((item) => [String(item._id), item]));
+    const prices = rows.map((row) => ({ ...row, item: items.get(String(row.itemId)) ?? null }));
+
     res.status(200).json({
       success: true,
-      data: {provider, price},
+      // `price` is kept for existing clients; `prices` includes each item.
+      data: { provider, prices, price: rows },
       message: "Provider and prices retrieved successfully"
     });
   } catch (error) {

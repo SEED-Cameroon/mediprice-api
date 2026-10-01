@@ -1,6 +1,7 @@
 import Service from '../models/Service.js';
 import Price from '../models/Price.js';
 import PriceHistory from "../models/PriceHistory.js";
+import { PROVIDER_FIELDS, attachPrices } from "../utils/prices.js";
 
 export async function createService(req, res, next) {
   try {
@@ -43,16 +44,21 @@ export async function getServices(req, res, next) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
 
-    const [service, total] = await Promise.all([
+    const [services, total] = await Promise.all([
       Service.find(filters)
+        .sort("name")
         .skip((pageNum - 1) * limitNum)
-        .limit(limitNum),
+        .limit(limitNum)
+        .lean(),
       Service.countDocuments(filters),
     ]);
 
+    // Include prices so list pages can show the lowest price without a request per item.
+    const data = await attachPrices("service", services);
+
     res.status(200).json({
       success: true,
-      data: service,
+      data,
       message: "Services retrieved successfully",
       pagination: {
         page: pageNum,
@@ -78,7 +84,7 @@ export async function getService(req, res, next) {
             itemType: "service",
             itemId: req.params.id
           })
-          .populate("providerId", "name type");
+          .populate("providerId", PROVIDER_FIELDS);
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,7 @@
 import Medication from '../models/Medication.js';
 import Service from '../models/Service.js';
 import Price from '../models/Price.js';
+import { PROVIDER_FIELDS, validObjectIds } from '../utils/prices.js';
 
 const MODELS_BY_ITEM_TYPE = {
   medication: Medication,
@@ -31,10 +32,13 @@ export async function comparePrices(req, res, next) {
       });
     }
 
-    const itemIds = String(ids || '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter(Boolean);
+    // Malformed ids are dropped rather than failing the whole comparison.
+    const itemIds = validObjectIds(
+      String(ids || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
 
     if (itemIds.length === 0) {
       return res.status(400).json({
@@ -49,7 +53,7 @@ export async function comparePrices(req, res, next) {
     const prices = await Price.find({
       itemType,
       itemId: { $in: itemIds },
-    }).populate('providerId', 'name type');
+    }).populate('providerId', PROVIDER_FIELDS);
 
     const pricesByItemId = new Map();
     for (const price of prices) {
