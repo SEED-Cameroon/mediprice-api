@@ -96,6 +96,7 @@ Every price change is saved in `PriceHistory` (old amount, new amount, who, when
 - The session is a JWT (HS256) in an httpOnly cookie, `Secure` in production. `SESSION_HOURS` sets its lifetime (default 8).
 - Writes must be sent as JSON, which blocks cross-site form posts against the cookie session.
 - If the web app is on a different domain from the API, set `COOKIE_SAMESITE=none` (HTTPS only) and list the web app in `CORS_ORIGIN`.
+- When the web app forwards `/api` through a Vercel rewrite (as mediprice-web does), set `TRUST_PROXY_HOPS=2`, so the login rate limit sees each visitor's address instead of Vercel's.
 - Auth events (logins, failures, lockouts, admin changes) are logged.
 
 ## Branch & PR rules

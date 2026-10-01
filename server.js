@@ -19,8 +19,10 @@ import compareRoutes from './src/routes/compare.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
 
 const app = express();
-// Behind Render's proxy, use the client's address for rate limiting.
-app.set('trust proxy', 1);
+// Number of proxies in front of the API, so rate limiting sees each visitor's
+// address: 1 for Render alone, 2 when the web app's Vercel rewrite forwards
+// /api through Vercel and then Render (set TRUST_PROXY_HOPS=2 on Render).
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
 
 // CORS_ORIGIN may list several origins, comma-separated
 // (e.g. the Vite dev server and a preview build).
