@@ -1,5 +1,9 @@
 import { Router } from 'express';
 import { createService, getServices, getService, serHistory } from '../controllers/service.controller.js';
+import { serviceAdmin } from '../controllers/catalog-admin.controller.js';
+import { auth, requireRole } from '../middleware/auth.js';
+
+const adminOnly = [auth, requireRole('admin')];
 
 const router = Router();
 
@@ -41,7 +45,9 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', createService);
+router.post('/', adminOnly, createService);
+router.patch('/:id', adminOnly, serviceAdmin.update);
+router.delete('/:id', adminOnly, serviceAdmin.remove);
 
 /**
  * @swagger

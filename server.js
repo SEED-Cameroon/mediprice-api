@@ -8,6 +8,8 @@ import swaggerSpec from './src/config/swagger.js';
 
 import { connectDB } from './src/config/db.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
+import { requireJson } from './src/middleware/auth.js';
+import userRoutes from './src/routes/user.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import medicationRoutes from './src/routes/medication.routes.js';
 import serviceRoutes from './src/routes/service.routes.js';
@@ -17,12 +19,18 @@ import compareRoutes from './src/routes/compare.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
 
 const app = express();
+// Behind Render's proxy, use the client's address for rate limiting.
+app.set('trust proxy', 1);
 
 // CORS_ORIGIN may list several origins, comma-separated
 // (e.g. the Vite dev server and a preview build).
 const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean);
-app.use(cors({ origin: allowedOrigins?.length ? allowedOrigins : undefined }));
-app.use(express.json());
+// credentials: the web app sends the httpOnly session cookie. Browsers only
+// allow that for an explicit origin list, so set CORS_ORIGIN in production.
+app.use(cors({ origin: allowedOrigins?.length ? allowedOrigins : undefined, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
+// CSRF guard: writes must be JSON (see requireJson).
+app.use('/api', requireJson);
 
 app.use(
   "/api-docs",
@@ -38,6 +46,7 @@ app.use('/api/prices', priceRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/compare', compareRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Fire off the DB connection without blocking server startup — connectDB
 // logs its own errors and never throws, so a missing/unreachable Mongo

@@ -12,8 +12,8 @@ export async function createMedication(req, res, next) {
     const { name, genericName, category, description, form, requiresPrescription } = req.body;
 
     // Validate required fields
-    if (!name || !genericName || !category || !description) {
-      return res.status(400).json({ success: false, data: null, message: 'All fields are required' });
+    if (!name || !category || !description) {
+      return res.status(400).json({ success: false, data: null, message: 'Name, category and description are required' });
     }
 
     const newMedication = await Medication.create({

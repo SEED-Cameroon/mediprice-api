@@ -1,5 +1,9 @@
 import { Router } from 'express';
 import { createMedication, getMedications, getMedication, medHistory } from '../controllers/medication.controller.js';
+import { medicationAdmin } from '../controllers/catalog-admin.controller.js';
+import { auth, requireRole } from '../middleware/auth.js';
+
+const adminOnly = [auth, requireRole('admin')];
 
 const router = Router();
 
@@ -41,7 +45,9 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', createMedication);
+router.post('/', adminOnly, createMedication);
+router.patch('/:id', adminOnly, medicationAdmin.update);
+router.delete('/:id', adminOnly, medicationAdmin.remove);
 
 /**
  * @swagger

@@ -1,5 +1,9 @@
 import express from "express";
-import { register, login } from "../controllers/auth.controller.js";
+import { register, login, logout, me } from "../controllers/auth.controller.js";
+import { auth, rateLimit } from "../middleware/auth.js";
+
+// 10 login attempts per IP every 15 minutes, on top of per-account lockout.
+const loginLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
 
 const router = express.Router();
 
@@ -94,6 +98,12 @@ router.post("/register", register)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/login", login);
+router.post("/login", loginLimit, login);
+
+// Clears the session cookie.
+router.post("/logout", logout);
+
+// The signed-in user (401 if not signed in).
+router.get("/me", auth, me);
 
 export default router;

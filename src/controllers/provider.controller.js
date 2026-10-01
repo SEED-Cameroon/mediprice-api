@@ -7,7 +7,7 @@ import Service from '../models/Service.js';
 
 export async function createProvider(req, res, next) {
   try {
-    const { name, type, phone } = req.body;
+    const { name, type, phone, quarter, address, city, location } = req.body;
 
     // Validate required fields
     if (!name || !type || !phone) {
@@ -18,6 +18,10 @@ export async function createProvider(req, res, next) {
       name,
       type,
       phone,
+      quarter,
+      address,
+      city,
+      location,
     });
 
     res.status(201).json({

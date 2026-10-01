@@ -1,5 +1,9 @@
 import { Router } from 'express';
 import { createProvider, getProviders, getProvider } from '../controllers/provider.controller.js';
+import { providerAdmin } from '../controllers/catalog-admin.controller.js';
+import { auth, requireRole } from '../middleware/auth.js';
+
+const adminOnly = [auth, requireRole('admin')];
 
 const router = Router();
 
@@ -40,7 +44,10 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', createProvider);
+router.post('/', adminOnly, createProvider);
+// Admins edit any provider; a provider account edits its own contact details.
+router.patch('/:id', auth, requireRole('admin', 'provider'), providerAdmin.update);
+router.delete('/:id', adminOnly, providerAdmin.remove);
 
 /**
  * @swagger

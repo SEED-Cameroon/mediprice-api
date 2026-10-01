@@ -1,34 +1,25 @@
 import { Router } from 'express';
-import { auth } from '../middleware/auth.js';
-import { submitPrice } from '../controllers/price.controller.js';
+import { auth, requireRole } from '../middleware/auth.js';
+import {
+  deletePrice,
+  importPrices,
+  listPrices,
+  priceHistory,
+  updatePrice,
+  upsertPrice,
+} from '../controllers/price.controller.js';
 
 const router = Router();
 
-/**
- * @swagger
- * /api/prices:
- *   post:
- *     summary: Submit a community-reported price
- *     description: Phase 2 — submit a new Price row for an existing item/provider pair. Not implemented yet.
- *     tags:
- *       - Price
- *     security:
- *       - bearerAuth: []
- *
- *     responses:
- *       401:
- *         description: Missing or invalid bearer token.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       501:
- *         description: Not implemented yet.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.post('/', auth, submitPrice);
+// Everything here needs a signed-in admin or provider. Providers are limited
+// to their own provider's prices inside the controller.
+router.use(auth, requireRole('admin', 'provider'));
+
+router.get('/', listPrices);
+router.post('/', upsertPrice);
+router.post('/import', requireRole('admin'), importPrices);
+router.patch('/:id', updatePrice);
+router.delete('/:id', deletePrice);
+router.get('/:id/history', priceHistory);
 
 export default router;
